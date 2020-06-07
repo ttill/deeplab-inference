@@ -1,3 +1,4 @@
+import mimetypes
 import typer
 from pathlib import Path
 from mt_inference.model import DeepLabModel
@@ -8,27 +9,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-# we are not checking whether frozen_graph file exists (`exists=True`)
-# to be able to support google cloud storage paths (gs://…)
-# TODO also support folder (dir_okay=True)
-def main(
-    frozen_graph: Path = typer.Option(
-        ..., file_okay=True, dir_okay=False, readable=True
-    ),
-    input: Path = typer.Option(
-        ..., exists=True, file_okay=True, dir_okay=False, readable=True
-    ),
-    output: Path = typer.Option(None, exists=False, writable=True),
-    visualize_progress: bool = False,
-    visualize_result: bool = False,
-):
-    """
-    Run inference on deeplab model stored in frozen graph on image.
-    Image has to be in RGB format. It will be cropped in a sliding window
-    approach…
-    """
-    model = DeepLabModel(str(frozen_graph))
-
+def inference(model, input, output, visualize_progress, visualize_result):
+    typer.echo(f"Running inference on {input}")
     windowed = Windowed(input)
 
     prob_map = np.zeros((windowed.height, windowed.width))
@@ -46,10 +28,44 @@ def main(
 
     seg_map = np.round(prob_map)
 
-    write_output(output, seg_map)
+    typer.echo(f"Completed running inference on {input}")
+
+    write_output(output, seg_map, input)
 
     if visualize_result:
         vis_segmentation(windowed.image, prob_map, seg_map)
+
+
+# we are not checking whether frozen_graph file exists (`exists=True`)
+# to be able to support google cloud storage paths (gs://…)
+def main(
+    frozen_graph: Path = typer.Option(
+        ..., file_okay=True, dir_okay=False, readable=True
+    ),
+    input: Path = typer.Option(
+        ..., exists=True, file_okay=True, dir_okay=True, readable=True
+    ),
+    output: Path = typer.Option(None, exists=False, writable=True),
+    visualize_progress: bool = False,
+    visualize_result: bool = False,
+):
+    """
+    Run inference on Deeplab model stored in frozen graph on image.
+    Image has to be in RGB format. It will be cropped in a sliding window
+    approach…
+    """
+    model = DeepLabModel(str(frozen_graph))
+
+    if input.is_dir():
+        for child in input.iterdir():
+            if child.is_file():
+                (t, enc) = mimetypes.guess_type(child)
+                if t and t.startswith("image/"):
+                    inference(
+                        model, child, output, visualize_progress, visualize_result
+                    )
+    else:
+        inference(model, input, output, visualize_progress, visualize_result)
 
 
 def vis_segmentation(image, prob_map, seg_map):
