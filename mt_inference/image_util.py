@@ -35,10 +35,10 @@ class Windowed:
                 box = box._replace(left=box.left + self.stride)
 
             """
-            Our approach below potentially causes big overlaps
-            for last row/column, but since the following could
-            result in some very small crops, we would feed data
-            with "wrong" scale into the model.
+            Our approach below potentially causes big overlaps for
+            last row/column (and thus performance impacts), but since
+            the following could result in some very small crops,
+            we would feed data with "wrong" scale into the model.
 
             box = box._replace(
                 right=min(box.left + self.crop_size, self.width),

@@ -2,6 +2,7 @@ import typer
 from pathlib import Path
 from mt_inference.model import DeepLabModel
 from mt_inference.image_util import Windowed
+from mt_inference.output import write as write_output
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 import numpy as np
@@ -14,10 +15,12 @@ def main(
     frozen_graph: Path = typer.Option(
         ..., file_okay=True, dir_okay=False, readable=True
     ),
-    image: Path = typer.Option(
+    input: Path = typer.Option(
         ..., exists=True, file_okay=True, dir_okay=False, readable=True
     ),
+    output: Path = typer.Option(None, exists=False, writable=True),
     visualize_progress: bool = False,
+    visualize_result: bool = False,
 ):
     """
     Run inference on deeplab model stored in frozen graph on image.
@@ -26,7 +29,7 @@ def main(
     """
     model = DeepLabModel(str(frozen_graph))
 
-    windowed = Windowed(image)
+    windowed = Windowed(input)
 
     prob_map = np.zeros((windowed.height, windowed.width))
 
@@ -41,10 +44,15 @@ def main(
         if visualize_progress:
             vis_segmentation(windowed.image, prob_map)
 
-    vis_segmentation(windowed.image, prob_map)
+    seg_map = np.round(prob_map)
+
+    write_output(output, seg_map)
+
+    if visualize_result:
+        vis_segmentation(windowed.image, prob_map, seg_map)
 
 
-def vis_segmentation(image, prob_map):
+def vis_segmentation(image, prob_map, seg_map):
     """Visualizes input image, probability map and overlay view."""
     plt.figure(figsize=(15, 5))
     grid_spec = gridspec.GridSpec(1, 4, width_ratios=[6, 6, 6, 1])
@@ -61,7 +69,7 @@ def vis_segmentation(image, prob_map):
 
     plt.subplot(grid_spec[2])
     plt.imshow(image)
-    plt.imshow((np.round(prob_map) * 255).astype(np.uint8), alpha=0.7)
+    plt.imshow((seg_map * 255).astype(np.uint8), alpha=0.7)
     plt.axis("off")
     plt.title("segmentation overlay")
 
