@@ -1,5 +1,6 @@
 from collections import namedtuple
 from pathlib import Path
+from typing import Iterator
 from PIL import Image
 import typer
 
@@ -13,16 +14,21 @@ class Windowed:
         self.stride = crop_size - overlap
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self.image.size[0]
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self.image.size[1]
 
-    def window(self):
-        box = Box(left=0, upper=0, right=self.crop_size, lower=self.crop_size)
-        last_row = False
+    def window(self) -> Iterator[Image]:
+        box = Box(
+            left=0,
+            upper=0,
+            right=min(self.crop_size, self.width),
+            lower=min(self.crop_size, self.height),
+        )
+        last_row = self.height >= self.crop_size
 
         while True:
             region = self.image.crop(box)
