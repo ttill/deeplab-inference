@@ -20,7 +20,10 @@ class Metric(ABC):
 
 class IoUMetric(Metric):
     def __call__(self):
-        intersection = self.seg_map * self.ground_truth  # Logical AND
-        union = self.seg_map + self.ground_truth  # Logical OR
+        intersection = np.count_nonzero(self.seg_map * self.ground_truth)
+        union = np.count_nonzero(self.seg_map + self.ground_truth)
 
-        return np.count_nonzero(intersection) / float(np.count_nonzero(union))
+        if union:
+            return intersection / float(union)
+        else:
+            1
