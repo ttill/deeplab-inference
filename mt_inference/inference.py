@@ -20,7 +20,7 @@ class InferenceResult:
         write_output(output, self.segmentation_map)
 
     def metrics(self, ground_truth: Path):
-        miou = metrics.MIoUMetric(ground_truth, self.segmentation_map)()
+        miou = metrics.MIoUMetric(ground_truth, self.segmentation_map)
         return miou
 
 

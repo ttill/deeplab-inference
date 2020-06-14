@@ -2,9 +2,9 @@ import mimetypes
 import typer
 from pathlib import Path
 from mt_inference.model import DeepLabModel
-from mt_inference.output import write as write_output
 from mt_inference.inference import InferenceEngine
 from mt_inference.utils import respective_file
+from mt_inference.metrics import weighted_metrics_mean
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 import numpy as np
@@ -75,7 +75,7 @@ def main(
         run_inference(input)
 
     if len(mious) > 1:
-        mean_miou = sum(mious) / len(mious)
+        mean_miou = weighted_metrics_mean(mious)
         typer.echo(f"Mean MIoU: {mean_miou}")
 
 
