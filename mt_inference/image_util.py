@@ -12,7 +12,7 @@ class Box(NamedTuple):
 
 
 class SlidingWindow:
-    def __init__(self, path: Path, crop_size: int = 512, overlap: int = 50):
+    def __init__(self, path: Path, crop_size: int = 622, overlap: int = 50):
         self.image = Image.open(path)
         self.crop_size = crop_size
         self.stride = crop_size - overlap

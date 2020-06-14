@@ -37,6 +37,7 @@ def main(
     model = DeepLabModel(str(frozen_graph))
     engine = InferenceEngine(model, vis_segmentation if visualize_progress else None,)
     mious = []
+    accuracies = []
 
     def run_inference(image_path):
         result = engine.run(image_path)
@@ -50,9 +51,10 @@ def main(
             )
 
         if ground_truth:
-            miou = result.metrics(respective_file(image_path, ground_truth))
-            mious.append(miou)
-            typer.echo(f"MIoU: {miou}")
+            metrics = result.metrics(respective_file(image_path, ground_truth))
+            mious.append(metrics.miou)
+            accuracies.append(metrics.accuracy)
+            typer.echo(f"MIoU: {metrics.miou}, Accuracy Lupine: {metrics.accuracy}")
 
         if visualize_result:
             vis_segmentation(
@@ -77,6 +79,10 @@ def main(
     if len(mious) > 1:
         mean_miou = weighted_metrics_mean(mious)
         typer.echo(f"Mean MIoU: {mean_miou}")
+
+    if len(accuracies) > 1:
+        mean_acc = weighted_metrics_mean(accuracies)
+        typer.echo(f"Mean Accuracy: {mean_acc}")
 
 
 def vis_segmentation(image, prob_map, seg_map):

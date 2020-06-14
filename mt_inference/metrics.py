@@ -49,5 +49,18 @@ class MIoUMetric(Metric):
         return (iou_lupine + iou_background) / 2
 
 
+class PixelAccuracyMetric(Metric):
+    def _calculate(self):
+        true_positive = np.count_nonzero(self.seg_map * self.ground_truth)
+        true_negative = np.count_nonzero(~self.seg_map * ~self.ground_truth)
+        false_positive_negative = (
+            np.count_nonzero(self.seg_map + self.ground_truth) - true_positive
+        )
+
+        return (true_positive + true_negative) / (
+            true_positive + true_negative + false_positive_negative
+        )
+
+
 def weighted_metrics_mean(metrics: List[Metric]):
     return sum([x.value * x.weight for x in metrics]) / sum([x.weight for x in metrics])
