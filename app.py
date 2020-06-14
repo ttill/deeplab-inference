@@ -40,7 +40,7 @@ def inference(
 
     if ground_truth:
         typer.echo("Ground truth provided. Calculating evaluation metrics")
-        iou = metrics.IoUMetric(ground_truth, seg_map)()
+        iou = metrics.IoUMetric(ground_truth, seg_map, input)()
         typer.echo(f"IoU: {iou}")
 
 
@@ -57,7 +57,7 @@ def main(
     visualize_progress: bool = False,
     visualize_result: bool = False,
     ground_truth: Path = typer.Option(
-        None, exists=True, file_okay=True, dir_okay=False, readable=True
+        None, exists=True, file_okay=True, dir_okay=True, readable=True
     ),
 ):
     """
@@ -73,7 +73,12 @@ def main(
                 (t, enc) = mimetypes.guess_type(child)
                 if t and t.startswith("image/"):
                     inference(
-                        model, child, output, visualize_progress, visualize_result
+                        model,
+                        child,
+                        output,
+                        visualize_progress,
+                        visualize_result,
+                        ground_truth,
                     )
     else:
         inference(

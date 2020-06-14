@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 import typer
+from .utils import respective_file
 
 
 def mask2image(seg_map: np.array) -> Image:
@@ -20,15 +21,9 @@ def write(output: Path, seg_map: np.array, input: Path):
     if not output is None:
         image = mask2image(seg_map)
 
-        if output.is_dir():
-            output = output / (input.stem + ".png")
+        output = respective_file(input, output)
 
         if not output.exists():
-            if not output.suffix.lower() == ".png":
-                typer.secho(
-                    "Wrong file suffix for output (expected .png/.PNG)",
-                    fg=typer.colors.YELLOW,
-                )
             save_image(str(output), image)
         else:
             typer.secho("Output file already exists.", err=True, fg=typer.colors.RED)
