@@ -18,18 +18,12 @@ def save_image(filepath: str, image: Image):
 
 
 def write(output: Path, seg_map: np.array, input: Path):
-    if not output is None:
-        image = mask2image(seg_map)
+    image = mask2image(seg_map)
 
-        output = respective_file(input, output)
+    output = respective_file(input, output)
 
-        if not output.exists():
-            save_image(str(output), image)
-        else:
-            typer.secho("Output file already exists.", err=True, fg=typer.colors.RED)
-
+    if not output.exists():
+        save_image(str(output), image)
     else:
-        typer.secho(
-            "output option not given. Segmentation map not saved.",
-            fg=typer.colors.YELLOW,
-        )
+        # TODO raise instead
+        typer.secho("Output file already exists.", err=True, fg=typer.colors.RED)

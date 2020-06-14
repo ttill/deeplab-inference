@@ -1,6 +1,6 @@
 from collections import namedtuple
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Tuple
 from PIL import Image
 import typer
 
@@ -21,7 +21,7 @@ class SlidingWindow:
     def height(self) -> int:
         return self.image.size[1]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[Box, Image.Image]]:
         box = Box(
             left=0,
             upper=0,

@@ -2,12 +2,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from PIL import Image
 import numpy as np
-from .utils import respective_file
 
 
 class Metric(ABC):
-    def __init__(self, ground_truth: Path, seg_map: np.array, input: Path):
-        ground_truth = respective_file(input, ground_truth)
+    def __init__(self, ground_truth: Path, seg_map: np.array):
         image = Image.open(ground_truth)
         self.ground_truth = np.array(image, dtype=bool)
 

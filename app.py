@@ -1,47 +1,13 @@
 import mimetypes
 import typer
 from pathlib import Path
-from mt_inference import metrics
 from mt_inference.model import DeepLabModel
-from mt_inference.image_util import SlidingWindow
 from mt_inference.output import write as write_output
+from mt_inference.inference import InferenceEngine
+from mt_inference.utils import respective_file
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 import numpy as np
-
-
-def inference(
-    model, input, output, visualize_progress, visualize_result, ground_truth=None
-):
-    typer.echo(f"Running inference on {input}")
-    window = SlidingWindow(input)
-
-    prob_map = np.zeros((window.height, window.width))
-
-    for crop, box in window:
-        crop_map = model.run(crop)
-
-        crop_map_full = np.zeros((window.height, window.width))
-        crop_map_full[box.upper : box.lower, box.left : box.right] = crop_map
-
-        prob_map = np.maximum(prob_map, crop_map_full)
-
-        if visualize_progress:
-            vis_segmentation(window.image, prob_map)
-
-    seg_map = np.round(prob_map)
-
-    typer.echo(f"Completed running inference on {input}")
-
-    write_output(output, seg_map, input)
-
-    if visualize_result:
-        vis_segmentation(window.image, prob_map, seg_map)
-
-    if ground_truth:
-        typer.echo("Ground truth provided. Calculating evaluation metrics")
-        iou = metrics.MIoUMetric(ground_truth, seg_map, input)()
-        typer.echo(f"MIoU: {iou}")
 
 
 # we are not checking whether frozen_graph file exists (`exists=True`)
@@ -69,31 +35,42 @@ def main(
     approach…
     """
     model = DeepLabModel(str(frozen_graph))
+    engine = InferenceEngine(model, vis_segmentation if visualize_progress else None,)
+
+    def run_inference(image_path):
+        result = engine.run(image_path)
+
+        if output:
+            result.saveAsImage(output)
+        else:
+            typer.secho(
+                "output option not given. Segmentation map not saved.",
+                fg=typer.colors.YELLOW,
+            )
+
+        if ground_truth:
+            miou = result.metrics(respective_file(image_path, ground_truth))
+            typer.echo(f"MIoU: {miou}")
+
+        if visualize_result:
+            vis_segmentation(
+                result.image, result.probability_map, result.segmentation_map
+            )
 
     split = None
     if split_file:
         with open(split_file) as f:
             split = [x.strip() for x in f]
 
-    print(split)
     if input.is_dir():
         for child in input.iterdir():
             if child.is_file():
                 (t, enc) = mimetypes.guess_type(child)
                 if t and t.startswith("image/"):
                     if not split or child.stem in split:
-                        inference(
-                            model,
-                            child,
-                            output,
-                            visualize_progress,
-                            visualize_result,
-                            ground_truth,
-                        )
+                        run_inference(child)
     else:
-        inference(
-            model, input, output, visualize_progress, visualize_result, ground_truth
-        )
+        run_inference(input)
 
 
 def vis_segmentation(image, prob_map, seg_map):

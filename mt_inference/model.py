@@ -1,15 +1,10 @@
+from abc import ABC, abstractmethod
 from PIL import Image
 import tensorflow as tf
 import numpy as np
 
 
-class DeepLabModel:
-    """Class to load deeplab model and run inference."""
-
-    INPUT_TENSOR_NAME = "ImageTensor:0"
-    OUTPUT_TENSOR_NAME = "SemanticProbabilities:0"  # SemanticPredictions:0
-    INPUT_SIZE = 623
-
+class Model(ABC):
     def __init__(self, frozen_graph_path: str):
         """Creates and loads pretrained deeplab model."""
         self.graph = tf.Graph()
@@ -22,6 +17,18 @@ class DeepLabModel:
             tf.import_graph_def(graph_def, name="")
 
         self.session = tf.compat.v1.Session(graph=self.graph)
+
+    @abstractmethod
+    def run(self, input):
+        pass
+
+
+class DeepLabModel(Model):
+    """Class to load deeplab model and run inference."""
+
+    INPUT_TENSOR_NAME = "ImageTensor:0"
+    OUTPUT_TENSOR_NAME = "SemanticProbabilities:0"  # SemanticPredictions:0
+    INPUT_SIZE = 623
 
     def run(self, image: Image) -> np.array:
         """
