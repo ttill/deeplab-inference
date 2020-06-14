@@ -8,6 +8,8 @@ import tensorflow as tf
 
 
 class Metric(ABC):
+    NAME = None
+
     def __init__(self, ground_truth: np.array, seg_map: np.array):
         self.ground_truth = ground_truth
         self.seg_map = seg_map
@@ -25,7 +27,7 @@ class Metric(ABC):
         pass
 
     def __str__(self):
-        return str(self.value)
+        return f"{self.NAME}: {self.value}"
 
 
 class KerasMetric(Metric):
@@ -40,26 +42,36 @@ class KerasMetric(Metric):
 
 
 class MIoUMetric(KerasMetric):
+    NAME = "MIoU"
+
     def _keras_metric(self):
         return tf.keras.metrics.MeanIoU(num_classes=2)
 
 
 class AccuracyMetric(KerasMetric):
+    NAME = "Accuracy"
+
     def _keras_metric(self):
         return tf.keras.metrics.Accuracy()
 
 
 class PrecisionMetric(KerasMetric):
+    NAME = "Precision"
+
     def _keras_metric(self):
         return tf.keras.metrics.Precision()
 
 
 class RecallMetric(KerasMetric):
+    NAME = "Recall"
+
     def _keras_metric(self):
         return tf.keras.metrics.Recall()
 
 
 class MatthewsCorrelationCoefficientMetric(Metric):
+    NAME = "Matthews Correlation Coefficient"
+
     def _calculate(self):
         gt = self.ground_truth.astype(bool)
         sm = self.seg_map.astype(bool)

@@ -1,4 +1,4 @@
-from typing import Callable, Type, NamedTuple
+from typing import Callable, List
 from pathlib import Path
 from PIL import Image
 import numpy as np
@@ -7,14 +7,6 @@ from . import metrics
 from .model import Model
 from .image_util import SlidingWindow
 from .output import write as write_output
-
-
-class InferenceMetrics(NamedTuple):
-    miou: metrics.MIoUMetric
-    accuracy: metrics.AccuracyMetric
-    precision: metrics.PrecisionMetric
-    recall: metrics.RecallMetric
-    matthews: metrics.MatthewsCorrelationCoefficientMetric
 
 
 class InferenceResult:
@@ -28,10 +20,8 @@ class InferenceResult:
     def saveAsImage(self, output: Path):
         write_output(output, self.segmentation_map)
 
-    def metrics(self, ground_truth: np.array) -> InferenceMetrics:
-        return InferenceMetrics(
-            *[x(ground_truth, self.segmentation_map) for x in metrics.METRICS]
-        )
+    def metrics(self, ground_truth: np.array) -> List[metrics.Metric]:
+        return [x(ground_truth, self.segmentation_map) for x in metrics.METRICS]
 
 
 class InferenceEngine:

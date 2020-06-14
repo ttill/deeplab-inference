@@ -2,7 +2,7 @@ import mimetypes
 import typer
 from pathlib import Path
 from mt_inference.model import DeepLabModel
-from mt_inference.inference import InferenceEngine, InferenceMetrics
+from mt_inference.inference import InferenceEngine
 from mt_inference.utils import respective_file
 from mt_inference.metrics import METRICS
 from matplotlib import gridspec
@@ -37,7 +37,7 @@ def main(
     """
     model = DeepLabModel(str(frozen_graph))
     engine = InferenceEngine(model, vis_segmentation if visualize_progress else None,)
-    maps = {"results": np.array([]), "ground_truths": np.array([])}
+    overall = {"predictions": np.array([]), "ground_truths": np.array([])}
 
     def run_inference(image_path):
         result = engine.run(image_path)
@@ -54,15 +54,15 @@ def main(
             gt = np.array(
                 Image.open(respective_file(image_path, ground_truth)), dtype=np.uint8
             )
-            m = result.metrics(gt)
-            for field in m._fields:
-                typer.echo(f"{field}: {getattr(m, field)}")
+            metrics = result.metrics(gt)
+            for metric in metrics:
+                typer.echo(metric)
 
-            maps["results"] = np.concatenate(
-                (result.segmentation_map.flatten(), maps["results"])
+            overall["predictions"] = np.concatenate(
+                (result.segmentation_map.flatten(), overall["predictions"])
             )
-            maps["ground_truths"] = np.concatenate(
-                (gt.flatten(), maps["ground_truths"])
+            overall["ground_truths"] = np.concatenate(
+                (gt.flatten(), overall["ground_truths"])
             )
 
         if visualize_result:
@@ -85,12 +85,10 @@ def main(
     else:
         run_inference(input)
 
-    if len(maps["results"]) > 1:
-        m = InferenceMetrics(
-            *[x(maps["ground_truths"], maps["results"]) for x in METRICS]
-        )
-        for field in m._fields:
-            typer.echo(f"Overall {field}: {getattr(m, field)}")
+    if len(overall["predictions"]) > 1:
+        for Metric in METRICS:
+            metric = Metric(overall["ground_truths"], overall["predictions"])
+            typer.echo(f"Overall {metric}")
 
 
 def vis_segmentation(image, prob_map, seg_map):
