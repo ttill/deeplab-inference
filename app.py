@@ -36,12 +36,13 @@ def main(
     """
     model = DeepLabModel(str(frozen_graph))
     engine = InferenceEngine(model, vis_segmentation if visualize_progress else None,)
+    mious = []
 
     def run_inference(image_path):
         result = engine.run(image_path)
 
         if output:
-            result.saveAsImage(output)
+            result.saveAsImage(respective_file(image_path, output))
         else:
             typer.secho(
                 "output option not given. Segmentation map not saved.",
@@ -50,6 +51,7 @@ def main(
 
         if ground_truth:
             miou = result.metrics(respective_file(image_path, ground_truth))
+            mious.append(miou)
             typer.echo(f"MIoU: {miou}")
 
         if visualize_result:
@@ -71,6 +73,10 @@ def main(
                         run_inference(child)
     else:
         run_inference(input)
+
+    if len(mious) > 1:
+        mean_miou = sum(mious) / len(mious)
+        typer.echo(f"Mean MIoU: {mean_miou}")
 
 
 def vis_segmentation(image, prob_map, seg_map):

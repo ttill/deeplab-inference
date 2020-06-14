@@ -1,4 +1,3 @@
-from collections import namedtuple
 from typing import Callable, Type
 from pathlib import Path
 from PIL import Image
@@ -18,7 +17,7 @@ class InferenceResult:
         self.segmentation_map = np.round(prob_map)
 
     def saveAsImage(self, output: Path):
-        write_output(output, self.segmentation_map, self.input_path)
+        write_output(output, self.segmentation_map)
 
     def metrics(self, ground_truth: Path):
         miou = metrics.MIoUMetric(ground_truth, self.segmentation_map)()

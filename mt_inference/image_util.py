@@ -1,10 +1,14 @@
-from collections import namedtuple
 from pathlib import Path
-from typing import Iterator, Tuple
+from typing import Iterator, NamedTuple, Tuple
 from PIL import Image
 import typer
 
-Box = namedtuple("Box", ["left", "upper", "right", "lower"])
+
+class Box(NamedTuple):
+    left: int
+    upper: int
+    right: int
+    lower: int
 
 
 class SlidingWindow:
