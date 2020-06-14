@@ -40,8 +40,8 @@ def inference(
 
     if ground_truth:
         typer.echo("Ground truth provided. Calculating evaluation metrics")
-        iou = metrics.IoUMetric(ground_truth, seg_map, input)()
-        typer.echo(f"IoU: {iou}")
+        iou = metrics.MIoUMetric(ground_truth, seg_map, input)()
+        typer.echo(f"MIoU: {iou}")
 
 
 # we are not checking whether frozen_graph file exists (`exists=True`)

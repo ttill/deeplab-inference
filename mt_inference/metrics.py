@@ -18,12 +18,18 @@ class Metric(ABC):
         pass
 
 
-class IoUMetric(Metric):
-    def __call__(self):
-        intersection = np.count_nonzero(self.seg_map * self.ground_truth)
-        union = np.count_nonzero(self.seg_map + self.ground_truth)
+class MIoUMetric(Metric):
+    def iou(self, predictions, ground_truth):
+        intersection = np.count_nonzero(predictions * ground_truth)
+        union = np.count_nonzero(predictions + ground_truth)
 
         if union:
-            return intersection / float(union)
+            return intersection / union
         else:
             1
+
+    def __call__(self):
+        iou_lupine = self.iou(self.seg_map, self.ground_truth)
+        iou_background = self.iou(~self.seg_map, ~self.ground_truth)
+
+        return (iou_lupine + iou_background) / 2
