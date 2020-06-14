@@ -3,7 +3,7 @@ import typer
 from pathlib import Path
 from mt_inference import metrics
 from mt_inference.model import DeepLabModel
-from mt_inference.image_util import Windowed
+from mt_inference.image_util import SlidingWindow
 from mt_inference.output import write as write_output
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
@@ -14,20 +14,20 @@ def inference(
     model, input, output, visualize_progress, visualize_result, ground_truth=None
 ):
     typer.echo(f"Running inference on {input}")
-    windowed = Windowed(input)
+    window = SlidingWindow(input)
 
-    prob_map = np.zeros((windowed.height, windowed.width))
+    prob_map = np.zeros((window.height, window.width))
 
-    for crop, box in windowed.window():
+    for crop, box in window:
         crop_map = model.run(crop)
 
-        crop_map_full = np.zeros((windowed.height, windowed.width))
+        crop_map_full = np.zeros((window.height, window.width))
         crop_map_full[box.upper : box.lower, box.left : box.right] = crop_map
 
         prob_map = np.maximum(prob_map, crop_map_full)
 
         if visualize_progress:
-            vis_segmentation(windowed.image, prob_map)
+            vis_segmentation(window.image, prob_map)
 
     seg_map = np.round(prob_map)
 
@@ -36,7 +36,7 @@ def inference(
     write_output(output, seg_map, input)
 
     if visualize_result:
-        vis_segmentation(windowed.image, prob_map, seg_map)
+        vis_segmentation(window.image, prob_map, seg_map)
 
     if ground_truth:
         typer.echo("Ground truth provided. Calculating evaluation metrics")

@@ -7,7 +7,7 @@ import typer
 Box = namedtuple("Box", ["left", "upper", "right", "lower"])
 
 
-class Windowed:
+class SlidingWindow:
     def __init__(self, path: Path, crop_size: int = 512, overlap: int = 50):
         self.image = Image.open(path)
         self.crop_size = crop_size
@@ -21,7 +21,7 @@ class Windowed:
     def height(self) -> int:
         return self.image.size[1]
 
-    def window(self):
+    def __iter__(self):
         box = Box(
             left=0,
             upper=0,
