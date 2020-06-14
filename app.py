@@ -1,6 +1,7 @@
 import mimetypes
 import typer
 from pathlib import Path
+from mt_inference import metrics
 from mt_inference.model import DeepLabModel
 from mt_inference.image_util import Windowed
 from mt_inference.output import write as write_output
@@ -9,7 +10,9 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-def inference(model, input, output, visualize_progress, visualize_result):
+def inference(
+    model, input, output, visualize_progress, visualize_result, ground_truth=None
+):
     typer.echo(f"Running inference on {input}")
     windowed = Windowed(input)
 
@@ -35,6 +38,11 @@ def inference(model, input, output, visualize_progress, visualize_result):
     if visualize_result:
         vis_segmentation(windowed.image, prob_map, seg_map)
 
+    if ground_truth:
+        typer.echo("Ground truth provided. Calculating evaluation metrics")
+        iou = metrics.IoUMetric(ground_truth, seg_map)()
+        typer.echo(f"IoU: {iou}")
+
 
 # we are not checking whether frozen_graph file exists (`exists=True`)
 # to be able to support google cloud storage paths (gs://…)
@@ -48,6 +56,9 @@ def main(
     output: Path = typer.Option(None, exists=False, writable=True),
     visualize_progress: bool = False,
     visualize_result: bool = False,
+    ground_truth: Path = typer.Option(
+        None, exists=True, file_okay=True, dir_okay=False, readable=True
+    ),
 ):
     """
     Run inference on Deeplab model stored in frozen graph on image.
@@ -65,7 +76,9 @@ def main(
                         model, child, output, visualize_progress, visualize_result
                     )
     else:
-        inference(model, input, output, visualize_progress, visualize_result)
+        inference(
+            model, input, output, visualize_progress, visualize_result, ground_truth
+        )
 
 
 def vis_segmentation(image, prob_map, seg_map):
