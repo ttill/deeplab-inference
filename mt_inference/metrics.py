@@ -24,7 +24,7 @@ class MIoUMetric(Metric):
         if union:
             return intersection / union
         else:
-            1
+            return 1
 
     def __call__(self):
         iou_lupine = self.iou(self.seg_map, self.ground_truth)
