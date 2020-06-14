@@ -21,14 +21,14 @@ class Windowed:
     def height(self) -> int:
         return self.image.size[1]
 
-    def window(self) -> Iterator[Image]:
+    def window(self):
         box = Box(
             left=0,
             upper=0,
             right=min(self.crop_size, self.width),
             lower=min(self.crop_size, self.height),
         )
-        last_row = self.height >= self.crop_size
+        last_row = self.height <= self.crop_size
 
         while True:
             region = self.image.crop(box)
