@@ -2,11 +2,12 @@ import mimetypes
 import typer
 from pathlib import Path
 from mt_inference.model import DeepLabModel
-from mt_inference.inference import InferenceEngine
+from mt_inference.inference import InferenceEngine, InferenceMetrics
 from mt_inference.utils import respective_file
-from mt_inference.metrics import weighted_metrics_mean
+from mt_inference.metrics import METRICS
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
+from PIL import Image
 import numpy as np
 
 
@@ -36,8 +37,7 @@ def main(
     """
     model = DeepLabModel(str(frozen_graph))
     engine = InferenceEngine(model, vis_segmentation if visualize_progress else None,)
-    mious = []
-    accuracies = []
+    maps = {"results": np.array([]), "ground_truths": np.array([])}
 
     def run_inference(image_path):
         result = engine.run(image_path)
@@ -51,10 +51,19 @@ def main(
             )
 
         if ground_truth:
-            metrics = result.metrics(respective_file(image_path, ground_truth))
-            mious.append(metrics.miou)
-            accuracies.append(metrics.accuracy)
-            typer.echo(f"MIoU: {metrics.miou}, Accuracy Lupine: {metrics.accuracy}")
+            gt = np.array(
+                Image.open(respective_file(image_path, ground_truth)), dtype=np.uint8
+            )
+            m = result.metrics(gt)
+            for field in m._fields:
+                typer.echo(f"{field}: {getattr(m, field)}")
+
+            maps["results"] = np.concatenate(
+                (result.segmentation_map.flatten(), maps["results"])
+            )
+            maps["ground_truths"] = np.concatenate(
+                (gt.flatten(), maps["ground_truths"])
+            )
 
         if visualize_result:
             vis_segmentation(
@@ -76,13 +85,12 @@ def main(
     else:
         run_inference(input)
 
-    if len(mious) > 1:
-        mean_miou = weighted_metrics_mean(mious)
-        typer.echo(f"Mean MIoU: {mean_miou}")
-
-    if len(accuracies) > 1:
-        mean_acc = weighted_metrics_mean(accuracies)
-        typer.echo(f"Mean Accuracy: {mean_acc}")
+    if len(maps["results"]) > 1:
+        m = InferenceMetrics(
+            *[x(maps["ground_truths"], maps["results"]) for x in METRICS]
+        )
+        for field in m._fields:
+            typer.echo(f"Overall {field}: {getattr(m, field)}")
 
 
 def vis_segmentation(image, prob_map, seg_map):

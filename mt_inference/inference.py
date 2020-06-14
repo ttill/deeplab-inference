@@ -11,7 +11,10 @@ from .output import write as write_output
 
 class InferenceMetrics(NamedTuple):
     miou: metrics.MIoUMetric
-    accuracy: metrics.PixelAccuracyMetric
+    accuracy: metrics.AccuracyMetric
+    precision: metrics.PrecisionMetric
+    recall: metrics.RecallMetric
+    matthews: metrics.MatthewsCorrelationCoefficientMetric
 
 
 class InferenceResult:
@@ -19,15 +22,16 @@ class InferenceResult:
         self.input_path = input_path
         self.image = image
         self.probability_map = prob_map
+        # TODO allow to define custom threshold
         self.segmentation_map = np.round(prob_map)
 
     def saveAsImage(self, output: Path):
         write_output(output, self.segmentation_map)
 
-    def metrics(self, ground_truth: Path) -> InferenceMetrics:
-        miou = metrics.MIoUMetric(ground_truth, self.segmentation_map)
-        acc = metrics.PixelAccuracyMetric(ground_truth, self.segmentation_map)
-        return InferenceMetrics(miou, acc)
+    def metrics(self, ground_truth: np.array) -> InferenceMetrics:
+        return InferenceMetrics(
+            *[x(ground_truth, self.segmentation_map) for x in metrics.METRICS]
+        )
 
 
 class InferenceEngine:

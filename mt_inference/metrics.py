@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from math import sqrt
 from typing import List
 from pathlib import Path
 from PIL import Image
@@ -7,17 +8,11 @@ import tensorflow as tf
 
 
 class Metric(ABC):
-    def __init__(self, ground_truth: Path, seg_map: np.array):
-        image = Image.open(ground_truth)
-        self.ground_truth = np.array(image, dtype=np.uint8)
-
+    def __init__(self, ground_truth: np.array, seg_map: np.array):
+        self.ground_truth = ground_truth
         self.seg_map = seg_map
 
         self._value = None
-
-    @property
-    def weight(self):
-        return self.seg_map.shape[0] * self.seg_map.shape[1]
 
     @property
     def value(self):
@@ -49,10 +44,44 @@ class MIoUMetric(KerasMetric):
         return tf.keras.metrics.MeanIoU(num_classes=2)
 
 
-class PixelAccuracyMetric(KerasMetric):
+class AccuracyMetric(KerasMetric):
     def _keras_metric(self):
         return tf.keras.metrics.Accuracy()
 
 
-def weighted_metrics_mean(metrics: List[Metric]):
-    return sum([x.value * x.weight for x in metrics]) / sum([x.weight for x in metrics])
+class PrecisionMetric(KerasMetric):
+    def _keras_metric(self):
+        return tf.keras.metrics.Precision()
+
+
+class RecallMetric(KerasMetric):
+    def _keras_metric(self):
+        return tf.keras.metrics.Recall()
+
+
+class MatthewsCorrelationCoefficientMetric(Metric):
+    def _calculate(self):
+        gt = self.ground_truth.astype(bool)
+        sm = self.seg_map.astype(bool)
+
+        tp = np.count_nonzero(sm * gt)  # true positive
+        tn = np.count_nonzero(~sm * ~gt)  # true negative
+        fp = np.count_nonzero(sm) - tp  # false positive
+        fn = np.count_nonzero(~sm) - tn  # false negative
+
+        numerator = tp * tn - fp * fn
+        denominator = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+
+        if not denominator:
+            return 0
+
+        return numerator / denominator
+
+
+METRICS = [
+    MIoUMetric,
+    AccuracyMetric,
+    PrecisionMetric,
+    RecallMetric,
+    MatthewsCorrelationCoefficientMetric,
+]
