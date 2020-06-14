@@ -59,6 +59,9 @@ def main(
     ground_truth: Path = typer.Option(
         None, exists=True, file_okay=True, dir_okay=True, readable=True
     ),
+    split_file: Path = typer.Option(
+        None, exists=True, file_okay=True, dir_okay=False, readable=True
+    ),
 ):
     """
     Run inference on Deeplab model stored in frozen graph on image.
@@ -67,19 +70,26 @@ def main(
     """
     model = DeepLabModel(str(frozen_graph))
 
+    split = None
+    if split_file:
+        with open(split_file) as f:
+            split = [x.strip() for x in f]
+
+    print(split)
     if input.is_dir():
         for child in input.iterdir():
             if child.is_file():
                 (t, enc) = mimetypes.guess_type(child)
                 if t and t.startswith("image/"):
-                    inference(
-                        model,
-                        child,
-                        output,
-                        visualize_progress,
-                        visualize_result,
-                        ground_truth,
-                    )
+                    if not split or child.stem in split:
+                        inference(
+                            model,
+                            child,
+                            output,
+                            visualize_progress,
+                            visualize_result,
+                            ground_truth,
+                        )
     else:
         inference(
             model, input, output, visualize_progress, visualize_result, ground_truth

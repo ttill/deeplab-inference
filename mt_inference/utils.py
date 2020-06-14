@@ -4,7 +4,8 @@ import typer
 
 def respective_file(input: Path, other: Path, extension: str = "png"):
     """
-    bla…
+    If `other` is folder, path to file inside with same basename as `input` is returned
+    else other is left untouched.
     """
     if other is None:
         return
