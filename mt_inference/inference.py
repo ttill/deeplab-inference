@@ -18,8 +18,11 @@ class InferenceResult:
         self.probability_map = prob_map
         self.segmentation_map = (prob_map > threshold).astype(np.uint8)
 
-    def saveAsImage(self, output: Path):
+    def save_segmentation(self, output: Path):
         write_output(output, self.segmentation_map)
+
+    def save_probability(self, output: Path):
+        write_output(output, self.probability_map, pseudocolor=True)
 
     def metrics(self, ground_truth: np.array) -> List[metrics.Metric]:
         return [x(ground_truth, self.segmentation_map) for x in metrics.METRICS]
@@ -29,7 +32,7 @@ class InferenceEngine:
     def __init__(
         self,
         model: Model,
-        visualize_progress: Callable[[Image.Image, np.array], None] = None,
+        visualize_progress: Callable[[Image.Image, np.array, np.array], None] = None,
     ):
         self.model = model
         self.visualize_progress = visualize_progress

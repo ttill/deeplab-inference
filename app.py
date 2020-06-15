@@ -20,7 +20,8 @@ def main(
     input: Path = typer.Option(
         ..., exists=True, file_okay=True, dir_okay=True, readable=True
     ),
-    output: Path = typer.Option(None, exists=False, writable=True),
+    segmentation: Path = typer.Option(None, exists=False, writable=True),
+    probability: Path = typer.Option(None, exists=False, writable=True),
     visualize_progress: bool = False,
     visualize_result: bool = False,
     ground_truth: Path = typer.Option(
@@ -42,13 +43,16 @@ def main(
     def run_inference(image_path):
         result = engine.run(image_path)
 
-        if output:
-            result.saveAsImage(respective_file(image_path, output))
+        if segmentation:
+            result.save_segmentation(respective_file(image_path, segmentation))
         else:
             typer.secho(
                 "output option not given. Segmentation map not saved.",
                 fg=typer.colors.YELLOW,
             )
+
+        if probability:
+            result.save_probability(respective_file(image_path, probability))
 
         if ground_truth:
             gt = np.array(
