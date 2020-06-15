@@ -10,12 +10,13 @@ from .output import write as write_output
 
 
 class InferenceResult:
-    def __init__(self, input_path: Path, image: Image, prob_map: np.array):
+    def __init__(
+        self, input_path: Path, image: Image, prob_map: np.array, threshold: int = 0.5
+    ):
         self.input_path = input_path
         self.image = image
         self.probability_map = prob_map
-        # TODO allow to define custom threshold
-        self.segmentation_map = np.round(prob_map)
+        self.segmentation_map = (prob_map > threshold).astype(np.uint8)
 
     def saveAsImage(self, output: Path):
         write_output(output, self.segmentation_map)
