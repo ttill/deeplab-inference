@@ -50,9 +50,9 @@ class InferenceEngine:
         self.model = model
         self.visualize_progress = visualize_progress
 
-    def run(self, input: Path) -> InferenceResult:
+    def run(self, input: Path, crop_size: int) -> InferenceResult:
         typer.echo(f"Running inference on {input}")
-        window = SlidingWindow(input)
+        window = SlidingWindow(input, crop_size=crop_size)
 
         prob_map = np.zeros((window.height, window.width))
 

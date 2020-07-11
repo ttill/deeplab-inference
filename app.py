@@ -20,6 +20,7 @@ def main(
     input: Path = typer.Option(
         ..., exists=True, file_okay=True, dir_okay=True, readable=True
     ),
+    crop_size: int = 622,
     segmentation: Path = typer.Option(None, exists=False, writable=True),
     probability: Path = typer.Option(None, exists=False, writable=True),
     visualize_progress: bool = False,
@@ -42,7 +43,7 @@ def main(
     overall = {"predictions": np.array([]), "ground_truths": np.array([])}
 
     def run_inference(image_path):
-        result = engine.run(image_path)
+        result = engine.run(image_path, crop_size)
 
         if segmentation:
             result.save_segmentation(respective_file(image_path, segmentation))
