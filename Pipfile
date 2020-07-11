@@ -13,5 +13,3 @@ numpy = "*"
 typer = {extras = ["all"], version = "*"}
 matplotlib = "*"
 
-[requires]
-python_version = "3.8"
