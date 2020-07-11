@@ -11,8 +11,8 @@ You will need the following things properly installed on your computer:
 
 ## Installation / Setup
 
-* `git clone git@gitlab.com:ttill/mt-inference.git`
-* `cd mt-inference`
+* `git clone git@github.com:ttill/deeplab-inference.git`
+* `cd deeplab-inference`
 
 ### Locally
 
