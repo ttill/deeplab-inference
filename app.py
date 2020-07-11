@@ -15,28 +15,77 @@ import numpy as np
 # to be able to support google cloud storage paths (gs://…)
 def main(
     frozen_graph: Path = typer.Option(
-        ..., file_okay=True, dir_okay=False, readable=True
+        ...,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        help="Path to frozen graph of the model to use in protobuf format.",
     ),
     input: Path = typer.Option(
-        ..., exists=True, file_okay=True, dir_okay=True, readable=True
+        ...,
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        readable=True,
+        help="Path to input image to infer on. In case a directory is passed inference will be run on every contained.",
     ),
-    crop_size: int = 622,
-    segmentation: Path = typer.Option(None, exists=False, writable=True),
-    probability: Path = typer.Option(None, exists=False, writable=True),
-    visualize_progress: bool = False,
-    visualize_result: bool = False,
+    crop_size: int = typer.Option(
+        622,
+        help="In case input is larger in terms of width or height, it will be cropped into patches "
+        "of `crop_size` with overlaps of 50 pixels will be passed into the model. Predicitons "
+        "will be stitched together considering the maximum value in the overlapping regions.",
+    ),
+    segmentation: Path = typer.Option(
+        None,
+        exists=False,
+        writable=True,
+        help="Where to put a PNG image of the segmentation map. Filename or folder (uses basename of input).",
+    ),
+    probability: Path = typer.Option(
+        None,
+        exists=False,
+        writable=True,
+        help="Where to put a PNG pseudocolor image of the probability map. Filename or folder (uses basename of input).",
+    ),
+    visualize_progress: bool = typer.Option(
+        False,
+        help="Show figure containing input, probability map (pseudocolors), segmentation overlay for every cropped patch (halts inference).",
+    ),
+    visualize_result: bool = typer.Option(
+        False,
+        help="Show figure containing input, probability map (pseudocolors), segmentation overlay for every input image (halts inference).",
+    ),
     ground_truth: Path = typer.Option(
-        None, exists=True, file_okay=True, dir_okay=True, readable=True
+        None,
+        exists=True,
+        file_okay=True,
+        dir_okay=True,
+        readable=True,
+        help="Path to image (filename or folder where png with same basename as input is located) "
+        "with ground truth as 8-bit grayscale png (class 0: `0`, class 1: `255`). "
+        "When supplied multiple metrics will be calculated (Accuracy, MIoU, Matthews Correlation Coefficient, …)",
     ),
     split_file: Path = typer.Option(
-        None, exists=True, file_okay=True, dir_okay=False, readable=True
+        None,
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        help="Use this to filter input folder. Path to text file with one basename per line (pascal voc format).",
     ),
-    difference: Path = typer.Option(None, exists=False, writable=True),
+    difference: Path = typer.Option(
+        None,
+        exists=False,
+        writable=True,
+        help="Where to put a PNG image containing a difference map: Black: "
+        "True negative (class 0), White: True positive (class 1), Red: False negative, Blue: False positive. "
+        "Filename or folder (uses basename of input).",
+    ),
 ):
     """
-    Run inference on Deeplab model stored in frozen graph on image.
+    Run inference on binary (2 classes only) Deeplab model stored in frozen graph on image.
     Image has to be in RGB format. It will be cropped in a sliding window
-    approach…
+    approach (see option `crop_size`).
     """
     model = DeepLabModel(str(frozen_graph))
     engine = InferenceEngine(model, vis_segmentation if visualize_progress else None,)
