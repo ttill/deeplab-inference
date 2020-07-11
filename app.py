@@ -30,6 +30,7 @@ def main(
     split_file: Path = typer.Option(
         None, exists=True, file_okay=True, dir_okay=False, readable=True
     ),
+    difference: Path = typer.Option(None, exists=False, writable=True),
 ):
     """
     Run inference on Deeplab model stored in frozen graph on image.
@@ -68,6 +69,9 @@ def main(
             overall["ground_truths"] = np.concatenate(
                 (gt.flatten(), overall["ground_truths"])
             )
+
+            if difference:
+                result.save_difference_map(respective_file(image_path, difference), gt)
 
         if visualize_result:
             vis_segmentation(

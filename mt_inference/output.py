@@ -8,6 +8,26 @@ import typer
 PSEUDOCOLOR_LUT = []
 
 
+def diffmap2image(diff_map: np.array) -> Image:
+    image = Image.fromarray(diff_map.astype(np.uint8))
+
+    lut = []
+    for i in range(256):
+        if i == 63:
+            # false negative -> red
+            lut.extend([255, 0, 0])
+        elif i == 127:
+            # false positive -> blue
+            lut.extend([0, 0, 255])
+        elif i == 255:
+            lut.extend([255, 255, 255])
+        else:
+            lut.extend([0, 0, 0])
+
+    image.putpalette(lut)
+    return image
+
+
 def mask2image(seg_map: np.array, pseudocolor: bool = False) -> Image:
     image = Image.fromarray((seg_map * 255).astype(np.uint8))
 
@@ -29,9 +49,7 @@ def save_image(filepath: str, image: Image):
     typer.secho(f"Saved mask to {filepath}", fg=typer.colors.GREEN)
 
 
-def write(output: Path, seg_map: np.array, pseudocolor: bool = False):
-    image = mask2image(seg_map, pseudocolor)
-
+def write(output: Path, image: Image):
     if not output.exists():
         save_image(str(output), image)
     else:

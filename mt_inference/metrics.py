@@ -8,6 +8,10 @@ import tensorflow as tf
 
 
 class Metric(ABC):
+    """
+    Performance metric. …
+    """
+
     NAME = None
 
     def __init__(self, ground_truth: np.array, seg_map: np.array):

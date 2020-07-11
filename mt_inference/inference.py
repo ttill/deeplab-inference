@@ -6,7 +6,7 @@ import typer
 from . import metrics
 from .model import Model
 from .image_util import SlidingWindow
-from .output import write as write_output
+from .output import write as write_output, mask2image, diffmap2image
 
 
 class InferenceResult:
@@ -19,13 +19,26 @@ class InferenceResult:
         self.segmentation_map = (prob_map > threshold).astype(np.uint8)
 
     def save_segmentation(self, output: Path):
-        write_output(output, self.segmentation_map)
+        write_output(output, mask2image(self.segmentation_map))
 
     def save_probability(self, output: Path):
-        write_output(output, self.probability_map, pseudocolor=True)
+        write_output(output, mask2image(self.probability_map, pseudocolor=True))
 
     def metrics(self, ground_truth: np.array) -> List[metrics.Metric]:
         return [x(ground_truth, self.segmentation_map) for x in metrics.METRICS]
+
+    def save_difference_map(self, output: Path, ground_truth: np.array):
+        inv = (~(self.segmentation_map).astype(bool)).astype(np.uint8)
+
+        tp = self.segmentation_map * ground_truth
+        tn = inv * (~(ground_truth).astype(bool)).astype(np.uint8)
+        fp = self.segmentation_map - tp
+        fn = inv - tn
+
+        # use rgb array instead by joining maps using np.stack((…),axis=2)
+        diff_map = tp * 255 + fp * 127 + fn * 63
+
+        write_output(output, diffmap2image(diff_map))
 
 
 class InferenceEngine:
