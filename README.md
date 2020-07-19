@@ -20,7 +20,7 @@ You will need the following things properly installed on your computer:
 
 ### Using docker
 
-* TODO
+* `docker build -t deeplab-inference .`
 
 
 ## Running
@@ -97,7 +97,8 @@ Options:
 
 ### Using docker
 
-* TODO
+* `docker run -it -v /path/to/data/:/data/ deeplab-inference bash`
+* `python app.py --frozen-graph /data/frozen_inference_graph.pb --input /data/images/ --segmentation /data/segmentation/`
 
 ## License
 
